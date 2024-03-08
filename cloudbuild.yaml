@@ -1,0 +1,49 @@
+steps:
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: validate_tfvars
+    dir: "tools"
+    entrypoint: "bash"
+    args: ['validate_tfvars.sh', '${_PROJECT_ID}', '${_REGION}', '${_ZONES}']
+
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: enable_api
+    script: |
+      gcloud services enable cloudresourcemanager.googleapis.com
+
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: prepare_project
+    dir: "tools"
+    entrypoint: bash
+    args: ['prepare_project.sh', '${_PROJECT_ID}']
+  
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: create_tf_bucket.sh
+    dir: "tools"
+    entrypoint: "bash"
+    args: ['create_tf_bucket.sh', '${_PROJECT_ID}']
+
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: prepare_tf_backend.sh
+    dir: "tools"
+    entrypoint: "bash"
+    args: ['prepare_tf_backend.sh', '${_PROJECT_ID}']
+
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: prepare_tfvars
+    dir: "tools"
+    entrypoint: "bash"
+    args: ['prepare_tfvars.sh', '${_REGION}', '${_ZONES}']
+
+  - name: "hashicorp/terraform"
+    dir: "infra"
+    args:
+      - init
+
+  - name: "hashicorp/terraform"
+    dir: "infra"
+    args:
+      - apply
+      - -var
+      - project_id=$_PROJECT_ID
+      - -var-file=terraform.tfvars
+      - -auto-approve
